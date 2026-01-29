@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using WinUIEx;
+using Windows.Foundation;
 
 namespace MoltbotTray.Windows;
 
@@ -16,6 +17,10 @@ public sealed partial class WebChatWindow : WindowEx
     private readonly string _gatewayUrl;
     private readonly string _token;
     private bool _initialized;
+    
+    // Store event handlers for cleanup
+    private TypedEventHandler<CoreWebView2, CoreWebView2NavigationCompletedEventArgs>? _navigationCompletedHandler;
+    private TypedEventHandler<CoreWebView2, CoreWebView2NavigationStartingEventArgs>? _navigationStartingHandler;
     
     public bool IsClosed { get; private set; }
 
@@ -33,9 +38,23 @@ public sealed partial class WebChatWindow : WindowEx
         this.CenterOnScreen();
         this.SetIcon(IconHelper.GetStatusIconPath(ConnectionStatus.Connected));
         
-        Closed += (s, e) => IsClosed = true;
+        Closed += OnWindowClosed;
         
         _ = InitializeWebViewAsync();
+    }
+
+    private void OnWindowClosed(object sender, WindowEventArgs e)
+    {
+        IsClosed = true;
+        
+        // Cleanup WebView2 event handlers
+        if (WebView.CoreWebView2 != null)
+        {
+            if (_navigationCompletedHandler != null)
+                WebView.CoreWebView2.NavigationCompleted -= _navigationCompletedHandler;
+            if (_navigationStartingHandler != null)
+                WebView.CoreWebView2.NavigationStarting -= _navigationStartingHandler;
+        }
     }
 
     private async Task InitializeWebViewAsync()
@@ -57,18 +76,20 @@ public sealed partial class WebChatWindow : WindowEx
             WebView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = true;
             WebView.CoreWebView2.Settings.IsZoomControlEnabled = true;
 
-            // Handle navigation events
-            WebView.CoreWebView2.NavigationCompleted += (s, e) =>
+            // Handle navigation events (store for cleanup)
+            _navigationCompletedHandler = (s, e) =>
             {
                 LoadingRing.IsActive = false;
                 LoadingRing.Visibility = Visibility.Collapsed;
             };
+            WebView.CoreWebView2.NavigationCompleted += _navigationCompletedHandler;
 
-            WebView.CoreWebView2.NavigationStarting += (s, e) =>
+            _navigationStartingHandler = (s, e) =>
             {
                 LoadingRing.IsActive = true;
                 LoadingRing.Visibility = Visibility.Visible;
             };
+            WebView.CoreWebView2.NavigationStarting += _navigationStartingHandler;
 
             // Navigate to chat
             NavigateToChat();

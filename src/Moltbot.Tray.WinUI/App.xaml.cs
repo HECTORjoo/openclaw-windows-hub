@@ -37,6 +37,7 @@ public partial class App : Application
     private System.Timers.Timer? _sessionPollTimer;
     private Mutex? _mutex;
     private Microsoft.UI.Dispatching.DispatcherQueue? _dispatcherQueue;
+    private CancellationTokenSource? _deepLinkCts;
     
     private ConnectionStatus _currentStatus = ConnectionStatus.Disconnected;
     private AgentActivity? _currentActivity;
@@ -477,6 +478,9 @@ public partial class App : Application
     {
         if (_settings == null) return;
 
+        // Unsubscribe from old client if exists
+        UnsubscribeGatewayEvents();
+
         _gatewayClient = new MoltbotGatewayClient(_settings.GatewayUrl, _settings.Token, new AppLogger());
         _gatewayClient.StatusChanged += OnConnectionStatusChanged;
         _gatewayClient.ActivityChanged += OnActivityChanged;
@@ -485,6 +489,19 @@ public partial class App : Application
         _gatewayClient.SessionsUpdated += OnSessionsUpdated;
         _gatewayClient.UsageUpdated += OnUsageUpdated;
         _ = _gatewayClient.ConnectAsync();
+    }
+
+    private void UnsubscribeGatewayEvents()
+    {
+        if (_gatewayClient != null)
+        {
+            _gatewayClient.StatusChanged -= OnConnectionStatusChanged;
+            _gatewayClient.ActivityChanged -= OnActivityChanged;
+            _gatewayClient.NotificationReceived -= OnNotificationReceived;
+            _gatewayClient.ChannelHealthUpdated -= OnChannelHealthUpdated;
+            _gatewayClient.SessionsUpdated -= OnSessionsUpdated;
+            _gatewayClient.UsageUpdated -= OnUsageUpdated;
+        }
     }
 
     private void OnConnectionStatusChanged(object? sender, ConnectionStatus status)
@@ -921,29 +938,39 @@ public partial class App : Application
 
     private void StartDeepLinkServer()
     {
+        _deepLinkCts = new CancellationTokenSource();
+        var token = _deepLinkCts.Token;
+        
         Task.Run(async () =>
         {
-            while (true)
+            while (!token.IsCancellationRequested)
             {
                 try
                 {
                     using var pipe = new NamedPipeServerStream(PipeName, PipeDirection.In);
-                    await pipe.WaitForConnectionAsync();
+                    await pipe.WaitForConnectionAsync(token);
                     using var reader = new System.IO.StreamReader(pipe);
-                    var uri = await reader.ReadLineAsync();
+                    var uri = await reader.ReadLineAsync(token);
                     if (!string.IsNullOrEmpty(uri))
                     {
                         Logger.Info($"Received deep link via IPC: {uri}");
                         _dispatcherQueue?.TryEnqueue(() => HandleDeepLink(uri));
                     }
                 }
+                catch (OperationCanceledException)
+                {
+                    break; // Normal shutdown
+                }
                 catch (Exception ex)
                 {
-                    Logger.Warn($"Deep link server error: {ex.Message}");
-                    await Task.Delay(1000);
+                    if (!token.IsCancellationRequested)
+                    {
+                        Logger.Warn($"Deep link server error: {ex.Message}");
+                        try { await Task.Delay(1000, token); } catch { break; }
+                    }
                 }
             }
-        });
+        }, token);
     }
 
     private void HandleDeepLink(string uri)
@@ -1017,14 +1044,28 @@ public partial class App : Application
     {
         Logger.Info("Application exiting");
         
+        // Cancel background tasks
+        _deepLinkCts?.Cancel();
+        
+        // Stop timers
         _healthCheckTimer?.Stop();
         _healthCheckTimer?.Dispose();
         _sessionPollTimer?.Stop();
         _sessionPollTimer?.Dispose();
-        _globalHotkey?.Unregister();
+        
+        // Cleanup hotkey
+        _globalHotkey?.Dispose();
+        
+        // Unsubscribe and dispose gateway client
+        UnsubscribeGatewayEvents();
         _gatewayClient?.Dispose();
+        
+        // Dispose tray and mutex
         _trayIcon?.Dispose();
         _mutex?.Dispose();
+        
+        // Dispose cancellation token source
+        _deepLinkCts?.Dispose();
         
         Exit();
     }
