@@ -147,13 +147,13 @@ public partial class App : Application
 
     private void OnTrayIconSelected(TrayIcon sender, TrayIconEventArgs e)
     {
-        // Left-click: show status detail or dashboard
-        OpenDashboard();
+        // Left-click: show menu (same as right-click, matching WinForms behavior)
+        ShowTrayMenuPopup();
     }
 
     private void OnTrayContextMenu(TrayIcon sender, TrayIconEventArgs e)
     {
-        // Use a popup window instead of MenuFlyout for better multi-monitor support
+        // Right-click: show menu via popup window for better multi-monitor support
         ShowTrayMenuPopup();
         // Don't set e.Flyout - we're handling it ourselves
     }
