@@ -209,8 +209,8 @@ public class TrayApplication : ApplicationContext
             SafeDestroyIcon(oldIcon);
 
             var tooltip = _currentActivity?.Kind != ActivityKind.Idle && !string.IsNullOrEmpty(_currentActivity?.DisplayText)
-                ? $"Clawdbot — {_currentActivity.DisplayText}"
-                : $"Clawdbot — {status}";
+                ? $"Moltbot — {_currentActivity.DisplayText}"
+                : $"Moltbot — {status}";
             _notifyIcon.Text = tooltip.Length > 63 ? tooltip[..63] : tooltip;
         }
 

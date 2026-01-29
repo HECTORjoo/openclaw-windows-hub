@@ -44,7 +44,7 @@ public class StatusDetailForm : Form
 
     private void InitializeComponent()
     {
-        Text = "Clawdbot Status";
+        Text = "Moltbot Status";
         Size = new Size(520, 500);
         MinimumSize = new Size(400, 350);
         StartPosition = FormStartPosition.CenterScreen;

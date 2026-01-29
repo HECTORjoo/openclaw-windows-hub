@@ -9,7 +9,7 @@ using System.Windows.Forms;
 namespace MoltbotTray;
 
 /// <summary>
-/// Embeds the Clawdbot WebChat UI via WebView2, matching the macOS native chat panel.
+/// Embeds the Moltbot WebChat UI via WebView2, matching the macOS native chat panel.
 /// </summary>
 public class WebChatForm : Form
 {
@@ -47,7 +47,7 @@ public class WebChatForm : Form
 
     private void InitializeComponent()
     {
-        Text = "Clawdbot Chat";
+        Text = "Moltbot Chat";
         Size = new Size(520, 750);
         MinimumSize = new Size(380, 450);
         StartPosition = FormStartPosition.CenterScreen;

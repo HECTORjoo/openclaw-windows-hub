@@ -202,7 +202,7 @@ public class MoltbotGatewayClient : IDisposable
                     version = "1.0.0",
                     platform = "windows",
                     mode = "cli",
-                    displayName = "Clawdbot Windows Tray"
+                    displayName = "Moltbot Windows Tray"
                 },
                 role = "operator",
                 scopes = new[] { "operator.admin", "operator.approvals", "operator.pairing" },
@@ -211,7 +211,7 @@ public class MoltbotGatewayClient : IDisposable
                 permissions = new { },
                 auth = new { token = _token },
                 locale = "en-US",
-                userAgent = "clawdbot-windows-tray/1.0.0"
+                userAgent = "moltbot-windows-tray/1.0.0"
             }
         };
         await SendRawAsync(JsonSerializer.Serialize(msg));
@@ -811,7 +811,7 @@ public class MoltbotGatewayClient : IDisposable
         if (lower.Contains("build") || lower.Contains("ci ") ||
             lower.Contains("deploy"))
             return ("🔨 Build", "build");
-        return ("🤖 Clawdbot", "info");
+        return ("🤖 Moltbot", "info");
     }
 
     // --- Utility ---

@@ -21,7 +21,7 @@ public partial class QuickSendDialog : Form
     private void InitializeComponent()
     {
         // Form properties
-        Text = "Quick Send — Clawdbot";
+        Text = "Quick Send — Moltbot";
         Size = new Size(500, 220);
         StartPosition = FormStartPosition.CenterScreen;
         FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -34,7 +34,7 @@ public partial class QuickSendDialog : Form
         // Label
         var label = new Label
         {
-            Text = "Send a message to Clawdbot:",
+            Text = "Send a message to Moltbot:",
             Location = new Point(12, 12),
             Size = new Size(460, 20),
             Font = new Font("Segoe UI", 9.5F, FontStyle.Regular)

@@ -6,7 +6,7 @@ namespace MoltbotTray;
 
 /// <summary>
 /// Registers a system-wide hotkey that works even when the app is not focused.
-/// Default: Ctrl+Shift+Space to open Quick Send.
+/// Default: Ctrl+Alt+Shift+C to open Quick Send.
 /// </summary>
 public class GlobalHotkey : IDisposable
 {
@@ -17,9 +17,10 @@ public class GlobalHotkey : IDisposable
     private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
 
     private const int HotkeyId = 9001;
+    private const uint MOD_ALT = 0x0001;
     private const uint MOD_CONTROL = 0x0002;
     private const uint MOD_SHIFT = 0x0004;
-    private const uint VK_SPACE = 0x20;
+    private const uint VK_C = 0x43;
 
     private readonly HotkeyWindow _window;
     private bool _registered;
@@ -35,9 +36,9 @@ public class GlobalHotkey : IDisposable
     {
         try
         {
-            _registered = RegisterHotKey(_window.Handle, HotkeyId, MOD_CONTROL | MOD_SHIFT, VK_SPACE);
+            _registered = RegisterHotKey(_window.Handle, HotkeyId, MOD_CONTROL | MOD_ALT | MOD_SHIFT, VK_C);
             if (_registered)
-                Logger.Info("Global hotkey registered: Ctrl+Shift+Space");
+                Logger.Info("Global hotkey registered: Ctrl+Alt+Shift+C");
             else
                 Logger.Warn("Failed to register global hotkey (may be in use by another app)");
             return _registered;

@@ -9,16 +9,16 @@ using System.Windows.Forms;
 namespace MoltbotTray;
 
 /// <summary>
-/// Handles clawdbot:// URI scheme registration and processing.
-/// Matches macOS deep link support (clawdbot://agent?message=...)
+/// Handles moltbot:// URI scheme registration and processing.
+/// Matches macOS deep link support (moltbot://agent?message=...)
 /// </summary>
 public static class DeepLinkHandler
 {
     private const string UriScheme = "Moltbot";
-    private const string FriendlyName = "Clawdbot Agent Command";
+    private const string FriendlyName = "Moltbot Agent Command";
 
     /// <summary>
-    /// Registers the clawdbot:// URI scheme in the Windows registry.
+    /// Registers the moltbot:// URI scheme in the Windows registry.
     /// Requires elevation for HKCR, falls back to HKCU.
     /// </summary>
     public static void RegisterUriScheme()
@@ -72,8 +72,8 @@ public static class DeepLinkHandler
     }
 
     /// <summary>
-    /// Processes a clawdbot:// deep link.
-    /// Supports: clawdbot://agent?message=...&sessionKey=...&channel=...
+    /// Processes a moltbot:// deep link.
+    /// Supports: moltbot://agent?message=...&sessionKey=...&channel=...
     /// </summary>
     public static async Task ProcessDeepLinkAsync(Uri uri, MoltbotGatewayClient client)
     {
@@ -110,8 +110,8 @@ public static class DeepLinkHandler
         {
             var preview = message.Length > 100 ? message[..100] + "…" : message;
             var result = MessageBox.Show(
-                $"A deep link wants to send this message to Clawdbot:\n\n\"{preview}\"\n\nAllow?",
-                "Clawdbot Deep Link",
+                $"A deep link wants to send this message to Moltbot:\n\n\"{preview}\"\n\nAllow?",
+                "Moltbot Deep Link",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Question);
 
