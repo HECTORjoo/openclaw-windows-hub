@@ -1,32 +1,35 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
-using System.Diagnostics;
 using System.Threading.Tasks;
+using WinUIEx;
 
 namespace MoltbotTray.Dialogs;
 
 /// <summary>
 /// First-run welcome dialog for new users.
 /// </summary>
-public sealed class WelcomeDialog
+public sealed class WelcomeDialog : WindowEx
 {
-    private ContentDialog? _dialog;
-    private ContentDialogResult _result;
+    private readonly TaskCompletionSource<ContentDialogResult> _tcs = new();
+    private ContentDialogResult _result = ContentDialogResult.None;
 
-    public async Task<ContentDialogResult> ShowAsync()
+    public WelcomeDialog()
     {
-        // Create a temporary window to host the dialog
-        var window = new Window();
-        window.Content = new Grid();
-        window.Activate();
-
-        // Build dialog content
-        var content = new StackPanel
+        Title = "Welcome to Moltbot";
+        this.SetWindowSize(480, 440);
+        this.CenterOnScreen();
+        this.SetIcon("Assets\\moltbot.ico");
+        
+        // Build UI directly in the window (no ContentDialog needed)
+        var root = new Grid
         {
-            Spacing = 16,
-            MaxWidth = 400
+            Padding = new Thickness(32),
+            RowSpacing = 16
         };
+        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
         // Lobster header
         var headerPanel = new StackPanel
@@ -46,16 +49,18 @@ public sealed class WelcomeDialog
             Style = (Style)Application.Current.Resources["TitleTextBlockStyle"],
             VerticalAlignment = VerticalAlignment.Center
         });
-        content.Children.Add(headerPanel);
+        Grid.SetRow(headerPanel, 0);
+        root.Children.Add(headerPanel);
 
-        // Description
+        // Content
+        var content = new StackPanel { Spacing = 16 };
+        
         content.Children.Add(new TextBlock
         {
             Text = "Moltbot Tray is your Windows companion for Moltbot, the AI-powered personal assistant.",
             TextWrapping = TextWrapping.Wrap
         });
 
-        // Getting started
         var gettingStarted = new StackPanel { Spacing = 8 };
         gettingStarted.Children.Add(new TextBlock
         {
@@ -69,7 +74,6 @@ public sealed class WelcomeDialog
         gettingStarted.Children.Add(bulletList);
         content.Children.Add(gettingStarted);
 
-        // Documentation link
         var docsButton = new HyperlinkButton
         {
             Content = "📚 View Documentation",
@@ -77,20 +81,48 @@ public sealed class WelcomeDialog
         };
         content.Children.Add(docsButton);
 
-        // Create and show dialog
-        _dialog = new ContentDialog
+        Grid.SetRow(content, 1);
+        root.Children.Add(content);
+
+        // Buttons
+        var buttonPanel = new StackPanel
         {
-            Title = "Welcome",
-            Content = content,
-            PrimaryButtonText = "Open Settings",
-            CloseButtonText = "Later",
-            DefaultButton = ContentDialogButton.Primary,
-            XamlRoot = window.Content.XamlRoot
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Spacing = 8
         };
 
-        _result = await _dialog.ShowAsync();
-        window.Close();
+        var laterButton = new Button { Content = "Later" };
+        laterButton.Click += (s, e) =>
+        {
+            _result = ContentDialogResult.None;
+            Close();
+        };
+        buttonPanel.Children.Add(laterButton);
+
+        var settingsButton = new Button
+        {
+            Content = "Open Settings",
+            Style = (Style)Application.Current.Resources["AccentButtonStyle"]
+        };
+        settingsButton.Click += (s, e) =>
+        {
+            _result = ContentDialogResult.Primary;
+            Close();
+        };
+        buttonPanel.Children.Add(settingsButton);
+
+        Grid.SetRow(buttonPanel, 2);
+        root.Children.Add(buttonPanel);
+
+        Content = root;
         
-        return _result;
+        Closed += (s, e) => _tcs.TrySetResult(_result);
+    }
+
+    public new Task<ContentDialogResult> ShowAsync()
+    {
+        Activate();
+        return _tcs.Task;
     }
 }
