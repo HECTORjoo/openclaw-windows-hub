@@ -188,20 +188,43 @@ public partial class App : Application
     private void OnTrayIconSelected(TrayIcon sender, TrayIconEventArgs e)
     {
         // Left-click: show menu (same as right-click, matching WinForms behavior)
-        ShowTrayMenuPopup();
+        // Ensure we're on the UI thread - after idle, callback context may be wrong
+        if (_dispatcherQueue?.HasThreadAccess == true)
+        {
+            ShowTrayMenuPopup();
+        }
+        else
+        {
+            _dispatcherQueue?.TryEnqueue(() => ShowTrayMenuPopup());
+        }
     }
 
     private void OnTrayContextMenu(TrayIcon sender, TrayIconEventArgs e)
     {
         // Right-click: show menu via popup window for better multi-monitor support
-        ShowTrayMenuPopup();
+        // Ensure we're on the UI thread
+        if (_dispatcherQueue?.HasThreadAccess == true)
+        {
+            ShowTrayMenuPopup();
+        }
+        else
+        {
+            _dispatcherQueue?.TryEnqueue(() => ShowTrayMenuPopup());
+        }
         // Don't set e.Flyout - we're handling it ourselves
     }
 
-    private async void ShowTrayMenuPopup()
+    private void ShowTrayMenuPopup()
     {
         try
         {
+            // Verify dispatcher is still valid
+            if (_dispatcherQueue == null)
+            {
+                Logger.Error("DispatcherQueue is null - cannot show menu");
+                return;
+            }
+
             // Close any existing menu
             if (_trayMenuWindow != null)
             {
@@ -231,6 +254,7 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
+            LogCrash("ShowTrayMenuPopup", ex);
             Logger.Error($"Failed to show tray menu: {ex.Message}");
         }
     }
