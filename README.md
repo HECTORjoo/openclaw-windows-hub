@@ -46,12 +46,12 @@ Use the build script to check prerequisites and build:
 Or build directly with dotnet:
 
 ```powershell
-# Build all
+# Build all (use build.ps1 for best results)
 dotnet build
 
-# Build specific project (note: full path to .csproj required)
-dotnet build src/OpenClaw.Tray/OpenClaw.Tray.csproj
-dotnet build src/OpenClaw.Tray.WinUI/OpenClaw.Tray.WinUI.csproj
+# Build WinUI (requires runtime identifier for WebView2 support)
+dotnet build src/OpenClaw.Tray.WinUI/OpenClaw.Tray.WinUI.csproj -r win-arm64  # ARM64
+dotnet build src/OpenClaw.Tray.WinUI/OpenClaw.Tray.WinUI.csproj -r win-x64    # x64
 ```
 
 ### Run Tray App
@@ -60,8 +60,9 @@ dotnet build src/OpenClaw.Tray.WinUI/OpenClaw.Tray.WinUI.csproj
 # WinForms version
 dotnet run --project src/OpenClaw.Tray/OpenClaw.Tray.csproj
 
-# WinUI version - run the exe directly
-.\src\OpenClaw.Tray.WinUI\bin\Debug\net10.0-windows10.0.19041.0\OpenClaw.Tray.WinUI.exe
+# WinUI version - run the exe directly (path includes runtime identifier)
+.\src\OpenClaw.Tray.WinUI\bin\Debug\net10.0-windows10.0.19041.0\win-arm64\OpenClaw.Tray.WinUI.exe  # ARM64
+.\src\OpenClaw.Tray.WinUI\bin\Debug\net10.0-windows10.0.19041.0\win-x64\OpenClaw.Tray.WinUI.exe    # x64
 ```
 
 ## 📦 OpenClaw.Tray (Molty)

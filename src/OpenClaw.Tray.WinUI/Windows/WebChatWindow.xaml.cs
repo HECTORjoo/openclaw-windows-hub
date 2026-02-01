@@ -6,6 +6,7 @@ using OpenClawTray.Services;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using WinUIEx;
 using Windows.Foundation;
@@ -16,7 +17,6 @@ public sealed partial class WebChatWindow : WindowEx
 {
     private readonly string _gatewayUrl;
     private readonly string _token;
-    private bool _initialized;
     
     // Store event handlers for cleanup
     private TypedEventHandler<CoreWebView2, CoreWebView2NavigationCompletedEventArgs>? _navigationCompletedHandler;
@@ -65,7 +65,7 @@ public sealed partial class WebChatWindow : WindowEx
         {
             Logger.Info("WebChatWindow: Initializing WebView2...");
             
-            // Set up user data folder
+            // Set up user data folder for WebView2
             var userDataFolder = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "OpenClawTray", "WebView2");
@@ -73,10 +73,9 @@ public sealed partial class WebChatWindow : WindowEx
             Directory.CreateDirectory(userDataFolder);
             Logger.Info($"WebChatWindow: User data folder: {userDataFolder}");
 
-            // Set environment variable for user data folder (WinUI workaround)
+            // Set environment variable for user data folder
             Environment.SetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER", userDataFolder);
             
-            // Just call EnsureCoreWebView2Async without creating environment first
             Logger.Info("WebChatWindow: Calling EnsureCoreWebView2Async...");
             await WebView.EnsureCoreWebView2Async();
             Logger.Info("WebChatWindow: CoreWebView2 initialized successfully");
@@ -105,24 +104,54 @@ public sealed partial class WebChatWindow : WindowEx
 
             // Navigate to chat
             NavigateToChat();
-            _initialized = true;
         }
         catch (Exception ex)
         {
-            Logger.Error($"WebView2 initialization failed: {ex.Message}");
+            Logger.Error($"WebView2 initialization failed: {ex.GetType().FullName}: {ex.Message}");
+            Logger.Error($"WebView2 HResult: 0x{ex.HResult:X8}");
+            if (ex.InnerException != null)
+            {
+                Logger.Error($"WebView2 inner exception: {ex.InnerException.GetType().FullName}: {ex.InnerException.Message}");
+            }
             Logger.Error($"WebView2 stack trace: {ex.StackTrace}");
-            LoadingRing.IsActive = false;
             
-            // Fallback: open in browser
-            Logger.Info("Falling back to browser...");
-            OnPopout(this, new RoutedEventArgs());
-            Close();
+            // Show error in the dialog instead of falling back to browser
+            LoadingRing.IsActive = false;
+            LoadingRing.Visibility = Visibility.Collapsed;
+            WebView.Visibility = Visibility.Collapsed;
+            ErrorPanel.Visibility = Visibility.Visible;
+            
+            var errorDetails = $"Exception: {ex.GetType().FullName}\n" +
+                              $"HResult: 0x{ex.HResult:X8}\n" +
+                              $"Message: {ex.Message}\n\n" +
+                              $"App Directory: {AppContext.BaseDirectory}\n" +
+                              $"Architecture: {RuntimeInformation.ProcessArchitecture}\n" +
+                              $"OS: {RuntimeInformation.OSDescription}\n\n" +
+                              $"Stack Trace:\n{ex.StackTrace}";
+            
+            if (ex.InnerException != null)
+            {
+                errorDetails += $"\n\nInner Exception: {ex.InnerException.GetType().FullName}\n{ex.InnerException.Message}";
+            }
+            
+            ErrorText.Text = errorDetails;
         }
     }
 
+    // Set to a test URL to bypass gateway (e.g., "https://www.bing.com"), or null for normal operation
+    private const string? DEBUG_TEST_URL = null;
+    
     private void NavigateToChat()
     {
         if (WebView.CoreWebView2 == null) return;
+
+        // If debug URL is set, use it instead of gateway
+        if (!string.IsNullOrEmpty(DEBUG_TEST_URL))
+        {
+            Logger.Info($"WebChatWindow: DEBUG MODE - Navigating to test URL: {DEBUG_TEST_URL}");
+            WebView.CoreWebView2.Navigate(DEBUG_TEST_URL);
+            return;
+        }
 
         var baseUrl = _gatewayUrl
             .Replace("ws://", "http://")

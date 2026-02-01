@@ -150,9 +150,13 @@ if ($CheckOnly) {
 
 Write-Header "Building Projects ($Configuration)"
 
+# Detect runtime identifier based on architecture
+$rid = if ($arch -eq "ARM64") { "win-arm64" } else { "win-x64" }
+Write-Info "Runtime identifier: $rid"
+
 $buildResults = @{}
 
-function Build-Project($name, $path) {
+function Build-Project($name, $path, $useRid = $false) {
     Write-Host "`nBuilding $name..." -ForegroundColor White
     
     if (-not (Test-Path $path)) {
@@ -160,7 +164,12 @@ function Build-Project($name, $path) {
         return $false
     }
     
-    $result = & dotnet build $path -c $Configuration 2>&1
+    # WinUI requires runtime identifier for self-contained WebView2 support
+    if ($useRid) {
+        $result = & dotnet build $path -c $Configuration -r $rid 2>&1
+    } else {
+        $result = & dotnet build $path -c $Configuration 2>&1
+    }
     $exitCode = $LASTEXITCODE
     
     if ($exitCode -eq 0) {
@@ -177,10 +186,10 @@ function Build-Project($name, $path) {
 }
 
 $projects = @{
-    "Shared" = "src/OpenClaw.Shared/OpenClaw.Shared.csproj"
-    "Tray" = "src/OpenClaw.Tray/OpenClaw.Tray.csproj"
-    "WinUI" = "src/OpenClaw.Tray.WinUI/OpenClaw.Tray.WinUI.csproj"
-    "CommandPalette" = "src/OpenClaw.CommandPalette/OpenClaw.CommandPalette.csproj"
+    "Shared" = @{ Path = "src/OpenClaw.Shared/OpenClaw.Shared.csproj"; UseRid = $false }
+    "Tray" = @{ Path = "src/OpenClaw.Tray/OpenClaw.Tray.csproj"; UseRid = $false }
+    "WinUI" = @{ Path = "src/OpenClaw.Tray.WinUI/OpenClaw.Tray.WinUI.csproj"; UseRid = $true }
+    "CommandPalette" = @{ Path = "src/OpenClaw.CommandPalette/OpenClaw.CommandPalette.csproj"; UseRid = $false }
 }
 
 $toBuild = if ($Project -eq "All") { @("Shared", "Tray", "WinUI") } else { @($Project) }
@@ -192,7 +201,8 @@ if ($Project -ne "Shared" -and $Project -ne "All" -and $toBuild -notcontains "Sh
 
 foreach ($proj in $toBuild) {
     if ($projects.ContainsKey($proj)) {
-        $buildResults[$proj] = Build-Project $proj $projects[$proj]
+        $projInfo = $projects[$proj]
+        $buildResults[$proj] = Build-Project $proj $projInfo.Path $projInfo.UseRid
     }
 }
 
@@ -222,7 +232,7 @@ if ($failCount -eq 0) {
         Write-Host "  WinForms: dotnet run --project src/OpenClaw.Tray/OpenClaw.Tray.csproj" -ForegroundColor White
     }
     if ($buildResults.ContainsKey("WinUI") -or $buildResults.ContainsKey("All")) {
-        Write-Host "  WinUI:    .\src\OpenClaw.Tray.WinUI\bin\$Configuration\net10.0-windows10.0.19041.0\OpenClaw.Tray.WinUI.exe" -ForegroundColor White
+        Write-Host "  WinUI:    .\src\OpenClaw.Tray.WinUI\bin\$Configuration\net10.0-windows10.0.19041.0\$rid\OpenClaw.Tray.WinUI.exe" -ForegroundColor White
     }
 } else {
     Write-Host "❌ $failCount build(s) failed" -ForegroundColor Red

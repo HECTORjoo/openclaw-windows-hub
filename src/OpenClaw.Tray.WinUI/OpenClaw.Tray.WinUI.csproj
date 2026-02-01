@@ -7,6 +7,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <EnableMsixTooling>true</EnableMsixTooling>
     <ApplicationIcon>Assets\openclaw.ico</ApplicationIcon>
     <RootNamespace>OpenClawTray</RootNamespace>
@@ -14,11 +15,6 @@
     <Version>0.1.0</Version>
     <FileVersion>0.1.0</FileVersion>
     <AssemblyVersion>0.1.0</AssemblyVersion>
-  </PropertyGroup>
-
-  <!-- Bundle Windows App SDK when publishing self-contained -->
-  <PropertyGroup Condition="'$(SelfContained)' == 'true'">
-    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
   </PropertyGroup>
 
   <ItemGroup>
@@ -40,9 +36,12 @@
   <!-- Copy WebView2Loader.dll to output root for unpackaged app -->
   <Target Name="CopyWebView2Loader" AfterTargets="Build">
     <PropertyGroup>
-      <WebView2LoaderSource Condition="'$(Platform)' == 'ARM64' OR '$(RuntimeIdentifier)' == 'win-arm64'">$(OutputPath)runtimes\win-arm64\native\WebView2Loader.dll</WebView2LoaderSource>
+      <!-- Detect ARM64 via RuntimeIdentifier, Platform, or processor architecture -->
+      <IsArm64Build Condition="'$(Platform)' == 'ARM64' OR '$(RuntimeIdentifier)' == 'win-arm64' OR '$(PROCESSOR_ARCHITECTURE)' == 'ARM64'">true</IsArm64Build>
+      <WebView2LoaderSource Condition="'$(IsArm64Build)' == 'true'">$(OutputPath)runtimes\win-arm64\native\WebView2Loader.dll</WebView2LoaderSource>
       <WebView2LoaderSource Condition="'$(WebView2LoaderSource)' == ''">$(OutputPath)runtimes\win-x64\native\WebView2Loader.dll</WebView2LoaderSource>
     </PropertyGroup>
+    <Message Importance="high" Text="Copying WebView2Loader.dll from $(WebView2LoaderSource)" />
     <Copy SourceFiles="$(WebView2LoaderSource)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" Condition="Exists('$(WebView2LoaderSource)')" />
   </Target>
 

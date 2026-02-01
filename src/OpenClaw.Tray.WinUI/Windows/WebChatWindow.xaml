@@ -48,6 +48,17 @@
         <!-- Loading indicator -->
         <ProgressRing x:Name="LoadingRing" Grid.Row="1" IsActive="True" 
                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        
+        <!-- Error display (hidden by default) -->
+        <ScrollViewer x:Name="ErrorPanel" Grid.Row="1" Visibility="Collapsed" Padding="20">
+            <StackPanel Spacing="12">
+                <TextBlock Text="WebView2 Failed to Initialize" FontSize="18" FontWeight="SemiBold" 
+                           Foreground="{ThemeResource SystemFillColorCriticalBrush}"/>
+                <TextBlock x:Name="ErrorText" TextWrapping="Wrap" IsTextSelectionEnabled="True"
+                           FontFamily="Consolas" FontSize="12"/>
+                <Button Content="Open in Browser Instead" Click="OnPopout" HorizontalAlignment="Left"/>
+            </StackPanel>
+        </ScrollViewer>
     </Grid>
 </winex:WindowEx>
 
