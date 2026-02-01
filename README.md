@@ -21,18 +21,46 @@ This monorepo contains three projects:
 ## 🚀 Quick Start
 
 ### Prerequisites
-- .NET 10.0 SDK
 - Windows 10/11
-- PowerToys (for Command Palette extension)
+- .NET 10.0 SDK (preview) - for WinForms tray
+- .NET 9.0 SDK - for WinUI tray
+- PowerToys (optional, for Command Palette extension)
 
 ### Build
-```bash
+
+Use the build script to check prerequisites and build:
+
+```powershell
+# Check prerequisites
+.\build.ps1 -CheckOnly
+
+# Build all projects
+.\build.ps1
+
+# Build specific project
+.\build.ps1 -Project WinUI
+.\build.ps1 -Project Tray -Configuration Release
+```
+
+Or build directly with dotnet:
+
+```powershell
+# Build all
 dotnet build
+
+# Build specific project (note: full path to .csproj required)
+dotnet build src/OpenClaw.Tray/OpenClaw.Tray.csproj
+dotnet build src/OpenClaw.Tray.WinUI/OpenClaw.Tray.WinUI.csproj
 ```
 
 ### Run Tray App
-```bash
-dotnet run --project src/OpenClaw.Tray
+
+```powershell
+# WinForms version (.NET 10)
+dotnet run --project src/OpenClaw.Tray/OpenClaw.Tray.csproj
+
+# WinUI version (.NET 9) - run the exe directly
+.\src\OpenClaw.Tray.WinUI\bin\Debug\net9.0-windows10.0.19041.0\OpenClaw.Tray.WinUI.exe
 ```
 
 ## 📦 OpenClaw.Tray (Molty)
