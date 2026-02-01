@@ -13,7 +13,7 @@ internal static class Program
 {
     private const string PipeName = "OpenClawTray-DeepLink";
     
-    internal static readonly UpdatumManager AppUpdater = new("shanselman", "moltbot-windows-hub")
+    internal static readonly UpdatumManager AppUpdater = new("shanselman", "openclaw-windows-hub")
     {
         FetchOnlyLatestRelease = true,
         InstallUpdateSingleFileExecutableName = "OpenClaw.Tray",

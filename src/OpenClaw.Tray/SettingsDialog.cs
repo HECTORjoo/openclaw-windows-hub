@@ -177,7 +177,7 @@ public partial class SettingsDialog : ModernForm
         aboutLabel.Cursor = Cursors.Hand;
         aboutLabel.Click += (_, _) => System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
         {
-            FileName = "https://github.com/shanselman/moltbot-windows-hub",
+            FileName = "https://github.com/shanselman/openclaw-windows-hub",
             UseShellExecute = true
         });
 
